@@ -18,7 +18,7 @@ branch=$(git symbolic-ref --short HEAD)
 # sh -c "git push mirror --force $branch"
 
 echo "Initiating mirror pull on git.ecd.axway.org..."
-curl -X POST --silent -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" "https://git.ecd.axway.org/api/v4/projects/${GITLAB_PROJECT_ID}/mirror/pull"
+curl -X POST --silent -H "PRIVATE-TOKEN: ${GITLAB_PASSWORD}" "https://git.ecd.axway.org/api/v4/projects/${GITLAB_PROJECT_ID}/mirror/pull"
 
 sleep $POLL_TIMEOUT
 
