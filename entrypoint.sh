@@ -60,7 +60,7 @@ then
     then
       echo "::group::Failed Job - Stage $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .stage" ) / Job $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .name" )"
       curl --header "PRIVATE-TOKEN: $GITLAB_PASSWORD" --silent "https://${GITLAB_HOSTNAME}/api/v4/projects/${GITLAB_PROJECT_ID}/jobs/${JOB_ID}/trace"
-      echo "::endgroup::"
+      echo "::endgroup"
     fi
   done
   echo "Debug problems by unfolding stages/jobs above"
