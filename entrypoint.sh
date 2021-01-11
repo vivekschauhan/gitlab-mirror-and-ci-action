@@ -14,7 +14,7 @@ sh -c "git config --global core.askPass /cred-helper.sh"
 sh -c "git config --global credential.helper cache"
 sh -c "git remote add mirror $*"
 sh -c "echo pushing to $branch branch at $(git remote get-url --push mirror)"
-sh -c "git push mirror $branch"
+sh -c "git push mirror --force $branch"
 
 sleep $POLL_TIMEOUT
 
@@ -47,12 +47,15 @@ done
 echo "Pipeline finished with status ${ci_status}"
 
 echo "Fetching all GitLab pipeline jobs involved"
-ci_jobs=$(curl --header "PRIVATE-TOKEN: $GITLAB_PASSWORD" --silent "https://${GITLAB_HOSTNAME}/api/v4/projects/${GITLAB_PROJECT_ID}/pipelines/${pipeline_id}/jobs" | jq -r '.[] | { id, name, stage }')
+ci_jobs=$(curl --header "PRIVATE-TOKEN: $GITLAB_PASSWORD" --silent "https://${GITLAB_HOSTNAME}/api/v4/projects/${GITLAB_PROJECT_ID}/pipelines/${pipeline_id}/jobs" | jq -r '.[] | { id, name, stage, status }')
 echo "Posting output from all GitLab pipeline jobs"
 for JOB_ID in $(echo $ci_jobs | jq -r .id); do
-  echo "##[group]Stage $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .stage" ) / Job $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .name" )"
-  curl --header "PRIVATE-TOKEN: $GITLAB_PASSWORD" --silent "https://${GITLAB_HOSTNAME}/api/v4/projects/${GITLAB_PROJECT_ID}/jobs/${JOB_ID}/trace"
-  echo "##[endgroup]"
+  job_status=$( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .stage" )
+  if [ "$job_status" = "failed" ]
+    echo "::group::Failed Job - Stage $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .stage" ) / Job $( echo $ci_jobs | jq -r "select(.id=="$JOB_ID") | .name" )"
+    curl --header "PRIVATE-TOKEN: $GITLAB_PASSWORD" --silent "https://${GITLAB_HOSTNAME}/api/v4/projects/${GITLAB_PROJECT_ID}/jobs/${JOB_ID}/trace"
+    echo "::endgroup::"
+  fi
 done
 echo "Debug problems by unfolding stages/jobs above"
   
